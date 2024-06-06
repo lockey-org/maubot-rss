@@ -72,3 +72,8 @@ async def upgrade_v2(conn: Connection) -> None:
 async def upgrade_v3(conn: Connection) -> None:
     await conn.execute("ALTER TABLE feed ADD COLUMN next_retry BIGINT DEFAULT 0")
     await conn.execute("ALTER TABLE feed ADD COLUMN error_count BIGINT DEFAULT 0")
+
+
+@upgrade_table.register(description="Add support for encoded content")
+async def upgrade_v4(conn: Connection) -> None:
+    await conn.execute("ALTER TABLE entry ADD COLUMN content TEXT")

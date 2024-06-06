@@ -66,6 +66,8 @@ class BoolArgument(command.Argument):
             res = False
         elif part in ("t", "true", "y", "yes", "1"):
             res = True
+        elif self.required == False:
+            res = None
         else:
             raise ValueError("invalid boolean")
         return val[len(part) :], res
@@ -116,11 +118,16 @@ class RSSBot(Plugin):
                 **attr.asdict(entry),
             }
         )
+
         msgtype = MessageType.NOTICE if sub.send_notice else MessageType.TEXT
+        msgchunks = [message[i:i + 30000] for i in range(0, len(message), 30000)]
+        self.log.debug(f"Message length: {len(message)} Content length: {len(entry.content)} Chunks: {len(msgchunks)}")
         try:
-            return await self.client.send_markdown(
-                sub.room_id, message, msgtype=msgtype, allow_html=True
-            )
+            for chunk in msgchunks:
+                returnval = await self.client.send_markdown(
+                    sub.room_id, chunk, msgtype=msgtype, allow_html=True
+                )
+            return returnval
         except Exception as e:
             self.log.warning(f"Failed to send {entry.id} of {feed.id} to {sub.room_id}: {e}")
 
@@ -296,6 +303,9 @@ class RSSBot(Plugin):
             title=getattr(entry, "title", ""),
             summary=getattr(entry, "description", "").strip(),
             link=getattr(entry, "link", ""),
+            content=entry["content"][0]["value"].strip() if hasattr(entry, "content")
+                                                            and len(entry["content"]) > 0
+                                                            and hasattr(entry["content"][0], "value") else "",
         )
 
     @staticmethod
@@ -434,6 +444,7 @@ class RSSBot(Plugin):
             title="Sample entry",
             summary="This is a sample entry to demonstrate your new template",
             link="http://example.com",
+            content="<b>Sample formatted content</b>"
         )
         await evt.reply(f"Template for feed ID {feed.id} updated. Sample notification:")
         await self._send(feed, sample_entry, sub)
@@ -454,15 +465,60 @@ class RSSBot(Plugin):
         send_type = "m.notice" if setting else "m.text"
         await evt.reply(f"Updates for feed ID {feed.id} will now be sent as `{send_type}`")
 
-    @staticmethod
-    def _format_subscription(feed: Feed, subscriber: str) -> str:
-        msg = (
-            f"* {feed.id} - [{feed.title}]({feed.url}) "
-            f"(subscribed by [{subscriber}](https://matrix.to/#/{subscriber}))"
-        )
-        if feed.error_count > 1:
-            msg += f"  \n  ⚠️ The last {feed.error_count} attempts to fetch the feed have failed!"
-        return msg
+    @rss.subcommand(
+        "postall", aliases=("p",), help="Post all previously seen entries from the given feed to this room"
+    )
+    @command.argument("feed_id", "feed ID", parser=int)
+    async def command_postall(self, evt: MessageEvent, feed_id: int) -> None:
+        if not await self.can_manage(evt):
+            return
+        sub, feed = await self.dbm.get_subscription(feed_id, evt.room_id)
+        if not sub:
+            await evt.reply("This room is not subscribed to that feed")
+            return
+        for entry in await self.dbm.get_entries(feed.id):
+            await self._broadcast(feed, entry, [sub])
+
+    @rss.subcommand("latest", aliases=("l",), help="Get the latest item for each feed.")
+    @command.argument("feed_id", "feed ID", parser=str, required=False)
+    @command.argument("limits", "limits", parser=str, required=False)
+    async def latest(self, evt: MessageEvent, feed_id: str = "", limits: str = "") -> None:
+        feed_id = feed_id or ""
+        limits = limits or ""
+        template = Template(self.config["notification_template"])
+
+        if feed_id:
+            try:
+                if "-" in feed_id:
+                    start_id, end_id = map(int, feed_id.split("-"))
+                    feed_ids = list(range(start_id, end_id + 1))
+                elif "," in feed_id:
+                    feed_ids = list(map(int, feed_id.split(",")))
+                else:
+                    feed_ids = [int(feed_id)]
+            except ValueError:
+                await evt.reply("Invalid feed ID range")
+                return
+
+            for feed_id in feed_ids:
+                feed = await self.dbm.get_feed_by_id(feed_id)
+                if not feed:
+                    await evt.reply(f"Feed ID {feed_id} not found")
+                    continue
+                entries = await self.dbm.get_entries(feed.id, limit=int(limits) if limits else 1)
+                for entry in entries:
+                    # 在这里创建 Template 对象
+                    await self._broadcast(feed, entry, [Subscription(feed_id=feed.id, room_id=evt.room_id, user_id=evt.sender, notification_template=Template(self.config["notification_template"]), send_notice=False)])
+        else:
+            subscriptions = await self.dbm.get_feeds_by_room(evt.room_id)
+            if len(subscriptions) == 0:
+                await evt.reply("There are no RSS subscriptions in this room")
+                return
+            for feed, _ in subscriptions:
+                # 直接使用已有的 entries 列表
+                entries = await self.dbm.get_entries(feed.id, limit=int(limits) if limits else 1)
+                for entry in entries:
+                    await self._broadcast(feed, entry, [Subscription(feed_id=feed.id, room_id=evt.room_id, user_id=evt.sender, notification_template=template, send_notice=False)])
 
     @rss.subcommand(
         "subscriptions",

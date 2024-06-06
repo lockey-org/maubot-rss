@@ -1,5 +1,5 @@
 # Feed update interval in minutes
-update_interval: 60
+update_interval: 30
 # Maximum backoff in minutes when failing to fetch feeds (defaults to 5 days)
 max_backoff: 7200
 # The time to sleep between send requests when broadcasting a new feed entry.
@@ -7,9 +7,11 @@ max_backoff: 7200
 spam_sleep: 2
 # The prefix for all commands
 # It has to be prefixed with ! in matrix to be recognised
-command_prefix: "rss"
+command_prefix: rss
 # Default post notification template for new subscriptions
-notification_template: "New post in $feed_title: [$title]($link)"
+notification_template: 'Updates：$feed_title: [$title]($link)'
 # Users who can bypass room permission checks
 admins:
-- "@user:example.com"
+- '@iceyear:lkt.icu'
+- '@lockeyteam:lkt.icu'
+- '@yonzilch:lkt.icu'
