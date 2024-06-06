@@ -1,0 +1,9 @@
+##[pylyzer] failed /mnt/chromeos/MyFiles/data/projects/tools/maubot-rss/rss/migrations.py 1717649584 2742
+.___v_desugar_1: Never
+.Connection: {<failure>}
+.Scheme: {<failure>}
+.UpgradeTable: {<failure>}
+.upgrade_table: Never
+
+
+

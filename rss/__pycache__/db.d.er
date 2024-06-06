@@ -1,0 +1,59 @@
+##[pylyzer] failed /mnt/chromeos/MyFiles/data/projects/tools/maubot-rss/rss/db.py 1717649584 8622
+.___v_desugar_1: Never
+.annotations: Never
+.___v_desugar_2: Never
+.datetime: Never
+.___v_desugar_3: Never
+.Template: {<failure>}
+.___v_desugar_4: Never
+.Record: {<failure>}
+.___v_desugar_5: Never
+.dataclass: Never
+.attr: Never
+
+.___v_desugar_6: Never
+.RoomID: {<failure>}
+.UserID: {<failure>}
+.___v_desugar_7: Never
+.Database: {<failure>}
+.Scheme: {<failure>}
+.___v_desugar_8: Never
+.SQLiteCursor: {<failure>}
+
+.Subscription: ClassType
+.Subscription.room_id: Failure
+.Subscription.send_notice: Bool
+.Subscription.user_id: Failure
+.Subscription.notification_template: Failure
+.Subscription.feed_id: Int
+.Subscription.__call__: () -> .Subscription
+.Subscription.from_row: (cls: () -> .Subscription or NoneType, row: NoneType) -> .Subscription or NoneType
+
+.Feed: ClassType
+.Feed.title: Str
+.Feed.subtitle: Str
+.Feed.link: Str
+.Feed.url: Str
+.Feed.id: Int
+.Feed.__call__: () -> .Feed
+.Feed.next_retry: Int
+.Feed.error_count: Int
+.Feed.subscriptions: Never
+.Feed.from_row: (cls: () -> .Feed or NoneType, row: NoneType) -> .Feed or NoneType
+
+.date_fmt: {"Type_Y-Type_m-Type_d Type_H:Type_M:Type_S"}
+.date_fmt_microseconds: {"Type_Y-Type_m-Type_d Type_H:Type_M:Type_S.Type_f"}
+.Entry: ClassType
+.Entry.title: Str
+.Entry.id: Str
+.Entry.summary: Str
+.Entry.link: Str
+.Entry.feed_id: Int
+.Entry.date: Failure
+.Entry.__call__: () -> .Entry
+.Entry.from_row: (cls: () -> .Entry or NoneType, row: NoneType) -> .Entry or NoneType
+
+.DBManager: ClassType
+.DBManager.db: Failure
+.DBManager.__call__: (db: Obj) -> .DBManager
+
